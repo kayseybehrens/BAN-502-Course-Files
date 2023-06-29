@@ -1,0 +1,40 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+```{r}
+read_csv("InventoryData.csv")
+
+library(esquisse) 
+library(tidyverse)
+```
+```{r}
+nrow(diamonds)
+```
+
+```{r}
+
+ggplot(diamonds, aes(x = price, y = cut)) + geom_col()
+
+ggplot(diamonds, aes(x = price, y = cut)) + geom_point() + facet_grid(. ~ color)
+```
+
+```{r}
+read_csv("InventoryData.csv") -> "inventory"
+```
+```{r}
+inventoryA = inventory %>% filter(Supplier == "A")
+str(inventoryA)
+```
+
+```{r}
+inventoryA = mutate(inventoryA, OnHandRatio = `On Hand` / `Annual Demand`)
+```
+
+```{r}
+inventoryA %>%
+  #summarise('Cost per Unit ($)')
+  group_by('Item SKU')
+```
+

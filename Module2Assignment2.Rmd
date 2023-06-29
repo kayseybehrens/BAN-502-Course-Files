@@ -1,0 +1,124 @@
+Begin by loading necessary packages.  
+```{r}
+library(tidyverse) #tidyverse set of packages and functions
+library(tidymodels)
+library(glmnet) #for Lasso, ridge, and elastic net models 
+library(GGally) #create ggcorr and ggpairs plots
+library(ggcorrplot) #create an alternative to ggcorr plots
+library(MASS) #access to forward and backward selection algorithms
+library(leaps) #best subset selection
+library(lmtest) #for the dw test
+library(splines) #for nonlinear fitting
+library(car) #for calculating the variance inflation factor
+```
+
+Read in the data and clean 
+```{r}
+bike = read_csv("bike_cleaned-3.csv")
+bike = bike %>% mutate(dteday = mdy(dteday))
+bike = bike %>% mutate_if(is.character, as_factor)
+ bike = bike %>% mutate(hr = as_factor(hr))
+```
+
+Using ggpairs to plot the variables -- splitting this into groups since there are so many variables (ignoring instant, registered and casual as specified in the assignment)
+NOTE that dteday would not work - error that it had too many levels? 
+-- this just doesn't work??
+```{r}
+ggpairs(bike, columns = c("season", "mnth", "hr", "holiday", "temp", "count"))
+ggpairs(bike, columns = c("weekday", "workingday", "weathersit", "atemp", "hum", "windspeed", "count"))
+```
+
+
+```{r}
+ggplot(bike, aes(x=windspeed, y=count)) + geom_boxplot()
+ggplot(bike, aes(x=hum, y=count)) + geom_boxplot()
+ggplot(bike, aes(x=atemp, y=count)) + geom_boxplot()
+ggplot(bike, aes(x=temp, y=count)) + geom_boxplot()
+```
+
+
+
+```{r}
+ggplot(bike, aes(x=season, y=count)) + geom_col()
+```
+```{r}
+bike_recipe = recipe(count ~ hr, bike)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe)
+
+lm_fit = fit(lm_wflow, bike)
+```
+
+```{r}
+summary(lm_fit$fit$fit$fit)
+```
+
+```{r}
+ggplot(bike, aes(x=temp, y=count)) + geom_point() + theme_bw()
+```
+
+
+
+```{r}
+bike_recipe2 = recipe(count ~ temp + atemp, bike)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe2)
+
+lm_fit = fit(lm_wflow, bike)
+```
+
+```{r}
+summary(lm_fit$fit$fit$fit)
+```
+
+```{r}
+bike_recipe3 = recipe(count ~ hr + temp, bike)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe3)
+
+lm_fit = fit(lm_wflow, bike)
+```
+
+```{r}
+summary(lm_fit$fit$fit$fit)
+```
+
+
+
+
+```{R}
+allmod = lm(count ~ season + mnth + hr + holiday + weekday + workingday + weathersit + temp + atemp + hum + windspeed, bike) #use the ~. to include all predictors rather than typing them all in
+summary(allmod)
+
+emptymod = lm(count ~1, bike) #use ~1 to build an empty model 
+summary(emptymod)
+```
+
+```{r}
+backmod = stepAIC(allmod, direction = "backward", trace = TRUE)
+summary(backmod)
+```
+
+
+

@@ -1,0 +1,60 @@
+Libraries  
+```{r, include = FALSE}
+library(tidyverse)
+library(tidymodels)
+library(cluster) #algorithms for clustering
+library(factoextra) #visualization
+```
+
+
+Read in the data.    
+```{r}
+trucks = read_csv("trucks-1.csv")
+```
+
+
+Plot relationship between distance and speeding
+```{r}
+ggplot(trucks, aes(x=Distance, y=Speeding)) + geom_point() + theme_bw()
+```
+
+
+```{r}
+kmeans_recipe = recipe(~ Distance + Speeding, trucks) 
+
+trucks_dummy = kmeans_recipe %>% 
+  step_dummy(all_nominal(), one_hot = TRUE) %>%
+  step_scale(all_numeric()) %>%
+  step_center(all_numeric()) 
+
+trucks_dummy = prep(trucks_dummy, trucks) #prepares the recipe
+
+trucks_cleaned = bake(trucks_dummy, trucks) #applies the recipe and yields a data frame
+```
+
+```{r}
+#we have two data frames now, one scaled and dummied and one original
+summary(trucks_cleaned)
+summary(trucks)
+```
+
+
+Perform k-means clustering with a pre-specified number of clusters. We use the scaled and dummied data frame.  
+```{r}
+set.seed(64)
+clusts = 
+  tibble(k = 2) %>%
+  mutate(
+    kclust = map(k, ~kmeans(trucks_cleaned, .x)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, trucks_cleaned)
+  )
+
+clusts
+```
+
+
+```{r}
+ggplot(trucks, aes(x=Distance,y=Speeding)) + geom_point()
+```
